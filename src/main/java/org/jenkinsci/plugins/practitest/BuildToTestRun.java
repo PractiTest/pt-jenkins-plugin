@@ -40,21 +40,34 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
 
     private final String projectId;
     private final String setId;
+    private final String instanceId;
 
     @DataBoundConstructor
-    public BuildToTestRun(String projectId, String setId) {
+    public BuildToTestRun(String projectId, String setId, String instanceId) {
         this.projectId = projectId;
         this.setId = setId;
+        this.instanceId = instanceId;
     }
 
     public String getProjectId() {
-        return projectId;
+        return "Loading Values...";
+    }
+
+    public String getSetId() {
+        return "Select Project...";
+    }
+
+    public String getInstanceId() {
+        return "Select Instance...";
     }
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
         listener.getLogger().println("~~~~ " + projectId);
         listener.getLogger().println("~~~~ " + setId);
+        listener.getLogger().println("~~~~ " + instanceId);
+
+
     }
 
     // Overridden for better type safety.
@@ -76,12 +89,10 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
             load();
         }
 
-        public ListBoxModel doFillSetIdItems(@QueryParameter String projectId){
-          PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
-          Map<String,String> testSets = ptClient.getTestSets(projectId);
+        private static ListBoxModel convertToListBoxModel(Map<String,String> data){
           ListBoxModel listBox = new ListBoxModel();
-          for (String setId : testSets.keySet()) {
-            listBox.add(testSets.get(setId), setId);
+          for (String id : data.keySet()) {
+            listBox.add(data.get(id), id);
           }
           return listBox;
         }
@@ -89,11 +100,19 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
         public ListBoxModel doFillProjectIdItems(){
           PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
           Map<String,String> projects = ptClient.getProjects();
-          ListBoxModel listBox = new ListBoxModel();
-          for (String projectId : projects.keySet()) {
-            listBox.add(projects.get(projectId), projectId);
-          }
-          return listBox;
+          return convertToListBoxModel(projects);
+        }
+
+        public ListBoxModel doFillSetIdItems(@QueryParameter String projectId){
+          PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
+          Map<String,String> testSets = ptClient.getTestSets(projectId);
+          return convertToListBoxModel(testSets);
+        }
+
+        public ListBoxModel doFillInstanceIdItems(@QueryParameter String projectId, @QueryParameter String setId){
+          PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
+          Map<String,String> instances = ptClient.getInstances(projectId, setId);
+          return convertToListBoxModel(instances);
         }
 
         public FormValidation doCheckBaseUrl(@QueryParameter String value)
@@ -114,12 +133,8 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
 
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            // To persist global configuration information,
-            // set that to properties and call save().
             apiToken = formData.getString("apiToken");
             baseUrl = formData.getString("baseUrl");
-            // ^Can also use req.bindJSON(this, formData);
-            //  (easier when there are many fields; need set* methods for this, like setUseFrench)
             save();
             return super.configure(req,formData);
         }
