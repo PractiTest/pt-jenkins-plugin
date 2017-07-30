@@ -5,6 +5,7 @@ import hudson.FilePath;
 import hudson.util.FormValidation;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
+import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
@@ -44,9 +45,9 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
 
     @DataBoundConstructor
     public BuildToTestRun(String projectId, String setId, String instanceId) {
-        this.projectId = projectId;
-        this.setId = setId;
-        this.instanceId = instanceId;
+      this.projectId = projectId;
+      this.setId = setId;
+      this.instanceId = instanceId;
     }
 
     public String getProjectId() {
@@ -63,25 +64,19 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
-        listener.getLogger().println("~~~~ " + projectId);
-        listener.getLogger().println("~~~~ " + setId);
-        listener.getLogger().println("~~~~ " + instanceId);
-
-
+        PractitestApi ptClient = new PractitestApi(getDescriptor().getBaseUrl(),
+          getDescriptor().getApiToken());
+        String exitCode = Result.SUCCESS.equals(build.getResult()) ? "0" : "1";
+        ptClient.createRun(projectId, instanceId, exitCode);
     }
 
-    // Overridden for better type safety.
-    // If your plugin doesn't really define any property on Descriptor,
-    // you don't have to do this.
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl)super.getDescriptor();
     }
 
-
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
-
         private String apiToken;
         private String baseUrl = "https://api.practitest.com";
 
@@ -123,7 +118,6 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
         }
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-            // Indicates that this builder can be used with all kinds of project types
             return true;
         }
 

@@ -94,7 +94,7 @@ public class PractitestApi {
       "\"data\" : {\"attributes\" : {" +
         "\"instance-id\": " + instanceId + "," +
         "\"exit-code\": " + exitCode +
-      "}}";
+      "}}}";
 
 
     try {
