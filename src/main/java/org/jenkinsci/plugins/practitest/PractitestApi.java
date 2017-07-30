@@ -26,15 +26,30 @@ public class PractitestApi {
     this.apiToken = apiToken;
   }
 
-  public Map<String,String> getProjects(){
-    Map<String,String> projectIdToName = new HashMap<String,String>();
+  private HttpGet initRequest(String path){
     byte[] encoding = Base64.encodeBase64(("jenkins@ci.com" + ":" + apiToken).getBytes());
-
-    HttpClient httpclient = new DefaultHttpClient();
-    HttpGet request = new HttpGet(baseUrl + "/api/v2/projects.json");
+    HttpGet request = new HttpGet(baseUrl + path);
     request.setHeader("Authorization", "Basic " + new String(encoding));
     request.addHeader("Content-Type", "application/json");
+    return request;
+  }
 
+  private Map<String,String> extractIdAndName(String responseBody){
+    Map<String,String> mapIdToName = new HashMap<String,String>();
+    JSONObject responseObj = new JSONObject(responseBody);
+    JSONArray responseData = responseObj.getJSONArray("data");
+    for (int i = 0; i < responseData.length(); i++){
+        String id = responseData.getJSONObject(i).getString("id");
+        String name = responseData.getJSONObject(i).getJSONObject("attributes").getString("name");
+        mapIdToName.put(id,name);
+    }
+    return mapIdToName;
+  }
+
+  private Map<String,String> getIdAndName(String pathQuery){
+    HttpClient httpclient = new DefaultHttpClient();
+    HttpGet request = initRequest(pathQuery);
+    Map<String,String> idToName = new HashMap<String,String>();
     try {
     // Create a response handler
         HttpResponse response = httpclient.execute(request);
@@ -42,13 +57,7 @@ public class PractitestApi {
         HttpEntity entity = response.getEntity();
         String responseBody = EntityUtils.toString(entity);
         if (statusCode == 200) {
-            JSONObject responseObj = new JSONObject(responseBody);
-            JSONArray responseData = responseObj.getJSONArray("data");
-            for (int i = 0; i < responseData.length(); i++){
-                String id = responseData.getJSONObject(i).getString("id");
-                String name = responseData.getJSONObject(i).getJSONObject("attributes").getString("name");
-                projectIdToName.put(id,name);
-            }
+             idToName = extractIdAndName(responseBody);
         } else {
             System.out.println("ERROR: " + statusCode + ": " + responseBody);
         }
@@ -56,7 +65,15 @@ public class PractitestApi {
         e.printStackTrace();
     }
     httpclient.getConnectionManager().shutdown();
-    return projectIdToName;
+    return idToName;
+  }
+
+  public Map<String,String> getProjects(){
+    return getIdAndName("/api/v2/projects.json");
+  }
+
+  public Map<String, String> getTestSets(String projectId){
+    return getIdAndName("/api/v2/projects/" + projectId + "/sets.json");
   }
 
 

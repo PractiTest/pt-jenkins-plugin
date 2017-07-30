@@ -39,12 +39,13 @@ import java.io.IOException;
 public class BuildToTestRun extends Builder implements SimpleBuildStep {
 
     private final String projectId;
+    private final String setId;
 
     @DataBoundConstructor
-    public BuildToTestRun(String projectId) {
+    public BuildToTestRun(String projectId, String setId) {
         this.projectId = projectId;
+        this.setId = setId;
     }
-
 
     public String getProjectId() {
         return projectId;
@@ -52,11 +53,8 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
-        // This is where you 'build' the project.
-        // Since this is a dummy, we just say 'hello world' and call that a build.
-
-        // This also shows how you can consult the global configuration of the builder
         listener.getLogger().println("~~~~ " + projectId);
+        listener.getLogger().println("~~~~ " + setId);
     }
 
     // Overridden for better type safety.
@@ -71,7 +69,6 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
 
-
         private String apiToken;
         private String baseUrl = "https://api.practitest.com";
 
@@ -79,9 +76,17 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
             load();
         }
 
-        public ListBoxModel doFillProjectIdItems(){
-          load();
+        public ListBoxModel doFillSetIdItems(@QueryParameter String projectId){
+          PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
+          Map<String,String> testSets = ptClient.getTestSets(projectId);
+          ListBoxModel listBox = new ListBoxModel();
+          for (String setId : testSets.keySet()) {
+            listBox.add(testSets.get(setId), setId);
+          }
+          return listBox;
+        }
 
+        public ListBoxModel doFillProjectIdItems(){
           PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
           Map<String,String> projects = ptClient.getProjects();
           ListBoxModel listBox = new ListBoxModel();

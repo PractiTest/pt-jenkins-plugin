@@ -13,4 +13,7 @@
   <f:entry field="projectId" title="Project">
     <f:select />
   </f:entry>
+  <f:entry field="setId" title="TestSet">
+    <f:select />
+  </f:entry>
 </j:jelly>
