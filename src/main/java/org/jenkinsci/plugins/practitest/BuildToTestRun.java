@@ -3,11 +3,11 @@ import hudson.Launcher;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.util.FormValidation;
-import hudson.model.AbstractProject;
-import hudson.model.Run;
-import hudson.model.Result;
-import hudson.model.TaskListener;
+import hudson.model.*;
 import hudson.tasks.Builder;
+import hudson.tasks.Notifier;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Publisher;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.util.ListBoxModel;
 import hudson.util.ListBoxModel.Option;
@@ -23,21 +23,7 @@ import java.util.Map;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
-/**
- * Sample {@link Builder}.
- *
- * <p>
- * When the user configures the project and enables this builder,
- * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked
- * and a new {@link BuildToTestRun} is created. The created
- * instance is persisted to the project configuration XML by using
- * XStream, so this allows you to use instance fields (like )
- * to remember the configuration.
- *
- * <p>
- * When a build is performed, the {@link #perform} method will be invoked.
- */
-public class BuildToTestRun extends Builder implements SimpleBuildStep {
+public class BuildToTestRun extends Notifier {
 
     private final String instanceUrl;
 
@@ -51,21 +37,27 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
     }
 
     @Override
-    public void perform(Run<?,?> build, FilePath workspace, Launcher launcher, TaskListener listener) {
+    public DescriptorImpl getDescriptor() {
+        return (DescriptorImpl)super.getDescriptor();
+    }
+
+    @Override
+    public BuildStepMonitor getRequiredMonitorService() {
+      return BuildStepMonitor.NONE;
+    }
+
+    @Override
+    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         PractitestApi ptClient = new PractitestApi(getDescriptor().getBaseUrl(),
           getDescriptor().getApiToken());
         String exitCode = Result.SUCCESS.equals(build.getResult()) ? "0" : "1";
         String buildUrl = build.getAbsoluteUrl();
         ptClient.createRun(instanceUrl, exitCode, buildUrl);
-    }
-
-    @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl)super.getDescriptor();
+        return true;
     }
 
     @Extension
-    public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
+    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> {
         private String apiToken;
         private String baseUrl = "https://api.practitest.com";
 
