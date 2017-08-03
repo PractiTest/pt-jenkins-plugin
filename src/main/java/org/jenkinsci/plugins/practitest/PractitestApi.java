@@ -14,7 +14,9 @@ import org.json.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
+import org.jenkinsci.plugins.practitest.Instance;
 /**
   Handles all API requests to PractiTest
 **/
@@ -74,26 +76,33 @@ public class PractitestApi {
     return idToName;
   }
 
-  public Map<String,String> getProjects(){
-    return getIdAndName("/api/v2/projects.json");
+  public void createRun(String instanceUrl, String exitCode, String buildUrl){
+    Instance instance = parseInstanceFromUrl(instanceUrl);
+    createRun(instance, exitCode, buildUrl);
   }
 
-  public Map<String, String> getTestSets(String projectId){
-    return getIdAndName("/api/v2/projects/" + projectId + "/sets.json");
+  private Instance parseInstanceFromUrl(String url){
+    if(url.startsWith("https://") || url.startsWith("http://")){
+      url = url.split(Pattern.quote("//"))[1];
+    }
+    String[] parts = url.split(Pattern.quote("/"));
+    String projectId = parts[2];
+    String setId = parts[4];
+    String instanceId = parts[6];
+    return new Instance(instanceId, setId, projectId);
   }
 
-  public Map<String, String> getInstances(String projectId, String setId){
-    return getIdAndName("/api/v2/projects/" + projectId + "/instances.json?set-ids=" + setId);
-  }
-
-  public void createRun(String projectId, String instanceId, String exitCode){
+  public void createRun(Instance instance, String exitCode, String buildUrl){
+    String projectId = instance.projectId;
+    String instanceId = instance.id;
 
     HttpClient httpclient = new DefaultHttpClient();
 
     String postData = "{" +
       "\"data\" : {\"attributes\" : {" +
         "\"instance-id\": " + instanceId + "," +
-        "\"exit-code\": " + exitCode +
+        "\"exit-code\": " + exitCode + "," +
+        "\"automated-execution-output\":" + "\"" +  buildUrl + "\"" +
       "}}}";
 
 

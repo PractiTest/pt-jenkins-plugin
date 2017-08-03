@@ -39,27 +39,15 @@ import java.io.IOException;
  */
 public class BuildToTestRun extends Builder implements SimpleBuildStep {
 
-    private final String projectId;
-    private final String setId;
-    private final String instanceId;
+    private final String instanceUrl;
 
     @DataBoundConstructor
-    public BuildToTestRun(String projectId, String setId, String instanceId) {
-      this.projectId = projectId;
-      this.setId = setId;
-      this.instanceId = instanceId;
+    public BuildToTestRun(String instanceUrl) {
+      this.instanceUrl = instanceUrl;
     }
 
-    public String getProjectId() {
-        return "Loading Values...";
-    }
-
-    public String getSetId() {
-        return "Select Project...";
-    }
-
-    public String getInstanceId() {
-        return "Select Instance...";
+    public String getInstanceUrl() {
+        return "";
     }
 
     @Override
@@ -67,7 +55,8 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
         PractitestApi ptClient = new PractitestApi(getDescriptor().getBaseUrl(),
           getDescriptor().getApiToken());
         String exitCode = Result.SUCCESS.equals(build.getResult()) ? "0" : "1";
-        ptClient.createRun(projectId, instanceId, exitCode);
+        String buildUrl = build.getAbsoluteUrl();
+        ptClient.createRun(instanceUrl, exitCode, buildUrl);
     }
 
     @Override
@@ -90,24 +79,6 @@ public class BuildToTestRun extends Builder implements SimpleBuildStep {
             listBox.add(data.get(id), id);
           }
           return listBox;
-        }
-
-        public ListBoxModel doFillProjectIdItems(){
-          PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
-          Map<String,String> projects = ptClient.getProjects();
-          return convertToListBoxModel(projects);
-        }
-
-        public ListBoxModel doFillSetIdItems(@QueryParameter String projectId){
-          PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
-          Map<String,String> testSets = ptClient.getTestSets(projectId);
-          return convertToListBoxModel(testSets);
-        }
-
-        public ListBoxModel doFillInstanceIdItems(@QueryParameter String projectId, @QueryParameter String setId){
-          PractitestApi ptClient = new PractitestApi(baseUrl, apiToken);
-          Map<String,String> instances = ptClient.getInstances(projectId, setId);
-          return convertToListBoxModel(instances);
         }
 
         public FormValidation doCheckBaseUrl(@QueryParameter String value)
