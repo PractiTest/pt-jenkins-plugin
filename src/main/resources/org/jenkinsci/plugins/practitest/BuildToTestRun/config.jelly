@@ -4,7 +4,7 @@
     This jelly script is used for per-project configuration.
   -->
 
-  <f:entry field="instanceUrl" title="Instance">
+  <f:entry field="instanceUrl" title="Instance URL">
     <f:textbox />
   </f:entry>
 </j:jelly>

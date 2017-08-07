@@ -1,5 +1,7 @@
 package org.jenkinsci.plugins.practitest;
 
+import jenkins.model.Jenkins;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -22,6 +24,7 @@ import org.jenkinsci.plugins.practitest.Instance;
 **/
 public class PractitestApi {
 
+  public static final String PLUGIN_VER = "1.0.0";
   private String baseUrl;
   private String apiToken;
 
@@ -33,47 +36,6 @@ public class PractitestApi {
   private String authorizationHeader(){
     byte[] headerBytes = Base64.encodeBase64(("jenkins@ci.com" + ":" + apiToken).getBytes());
     return "Basic " + new String(headerBytes);
-  }
-
-  private HttpGet initRequest(String path){
-    HttpGet request = new HttpGet(baseUrl + path);
-    request.setHeader("Authorization", authorizationHeader());
-    request.addHeader("Content-Type", "application/json");
-    return request;
-  }
-
-  private Map<String,String> extractIdAndName(String responseBody){
-    Map<String,String> mapIdToName = new HashMap<String,String>();
-    JSONObject responseObj = new JSONObject(responseBody);
-    JSONArray responseData = responseObj.getJSONArray("data");
-    for (int i = 0; i < responseData.length(); i++){
-        String id = responseData.getJSONObject(i).getString("id");
-        String name = responseData.getJSONObject(i).getJSONObject("attributes").getString("name");
-        mapIdToName.put(id,name);
-    }
-    return mapIdToName;
-  }
-
-  private Map<String,String> getIdAndName(String pathQuery){
-    HttpClient httpclient = new DefaultHttpClient();
-    HttpGet request = initRequest(pathQuery);
-    Map<String,String> idToName = new HashMap<String,String>();
-    try {
-    // Create a response handler
-        HttpResponse response = httpclient.execute(request);
-        int statusCode = response.getStatusLine().getStatusCode();
-        HttpEntity entity = response.getEntity();
-        String responseBody = EntityUtils.toString(entity);
-        if (statusCode == 200) {
-             idToName = extractIdAndName(responseBody);
-        } else {
-            System.out.println("ERROR: " + statusCode + ": " + responseBody);
-        }
-    } catch (Throwable e) {
-        e.printStackTrace();
-    }
-    httpclient.getConnectionManager().shutdown();
-    return idToName;
   }
 
   public void createRun(String instanceUrl, String exitCode, String buildUrl){
@@ -105,9 +67,10 @@ public class PractitestApi {
         "\"automated-execution-output\":" + "\"" +  buildUrl + "\"" +
       "}}}";
 
-
     try {
-        HttpPost request = new HttpPost(baseUrl + "/api/v2/projects/" + projectId + "/runs.json");
+        HttpPost request = new HttpPost(baseUrl + "/api/v2/projects/" + projectId +
+              "/runs.json?source=jenkins&jenkins_ver=" + Jenkins.VERSION +
+              "&plugin_ver=" + PLUGIN_VER);
         request.setEntity(new StringEntity(postData));
         request.setHeader("Authorization", authorizationHeader());
         request.addHeader("content-type", "application/json");
