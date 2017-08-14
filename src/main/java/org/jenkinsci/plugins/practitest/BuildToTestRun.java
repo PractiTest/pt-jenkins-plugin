@@ -33,7 +33,7 @@ public class BuildToTestRun extends Notifier {
     }
 
     public String getInstanceUrl() {
-        return "";
+        return instanceUrl;
     }
 
     @Override
