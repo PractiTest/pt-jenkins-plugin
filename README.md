@@ -1,4 +1,4 @@
-# PractiTest Jenkins plugins
+  # PractiTest Jenkins plugin
 
 Create Test Runs in PractiTest with results from Jenkins builds.
 
@@ -27,7 +27,7 @@ If you don't have existing projects create one by slecting _New Item_ in the lef
 
 1. Click _Configure_ in the left menu
 2. Scroll down to _Post-build Actions_
-3. Click on _Add psot-build action_ and select PractiTest
+3. Click on _Add post-build action_ and select PractiTest
 4. Paste instance URL from PractiTest (e.g. https://prod.practitest.com/p/1/sets/5/instances/59/edit)
 5. Click _Save_
 
@@ -46,8 +46,10 @@ The practitest.hip file should be in target/ directory.
 ## Running jenkins in docker
 
 To run jenkins in docker execute:
-`docker pull jenkinsci/jenkins:lts`
-`docker run -p 8080:8080 -p 50000:50000 jenkinsci/jenkins:lts`
+```
+docker pull jenkinsci/jenkins:lts
+docker run -p 8080:8080 -p 50000:50000 jenkinsci/jenkins:lts
+```
 
 If you are running with docker-machine
 access jenkins through docker machine ip (to find out run `echo $DOCKER_HOST`) otherwise just access http://localhost:8080 in your browser.
